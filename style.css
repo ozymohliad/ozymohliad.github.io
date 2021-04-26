@@ -15,6 +15,8 @@ body::after {
 }
 
 .header {
+	display: inline-block;
+	width: 98vw;
 	background-color: #8698b5;
 	padding: 5px 5px 5px 5px;
 	margin: 5px 5px 5px 5px;
@@ -47,7 +49,36 @@ footer {
 	text-align: center;
 }
 
+iframe {
+	border: none;
+	margin: 10px 10px 10px 10px;
+}
+
 .sketchfab-embed-wrapper iframe {
 	width: 75vw;
 	height: 75vh;
+}
+
+button {
+	background-color: #8698b5;
+	border: none;
+	color: white;
+	padding: 15px 32px;
+	text-align: center;
+	text-decoration: none;
+	display: inline-block;
+	font-size: 16px;
+	border-radius: 5px;
+}
+
+button:hover {
+	background-color: #7688a6; 
+	cursor: pointer;
+}
+
+.lab3div {
+	display: inline-block;
+	background-color: #112358;
+	color: white;
+	margin: 10px 10px 10px 10px
 }

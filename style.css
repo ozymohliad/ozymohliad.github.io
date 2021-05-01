@@ -7,7 +7,7 @@ body {
 	position: relative;
 }
 
-p {
+.taskdesc {
 	margin-left: 25vw;
 	margin-right: 25vw;
 	text-align: center;

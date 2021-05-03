@@ -7,11 +7,14 @@ body {
 	position: relative;
 }
 
+p {
+	font-size: 150%;
+}
+
 .taskdesc {
 	margin-left: 25vw;
 	margin-right: 25vw;
 	text-align: center;
-	font-size: 150%;
 }
 
 body::after {
@@ -87,3 +90,12 @@ button:hover {
 	color: white;
 	margin: 10px 10px 10px 10px
 }
+
+.tinput {
+	font-size: 150%;
+	padding: 5px;
+	border-radius: 5px;
+	border-style: groove;
+	width: 50vw;
+}
+

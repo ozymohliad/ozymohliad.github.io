@@ -9,8 +9,9 @@ function getDomains() {
 }
 
 function task3() {
-	let pattern = "^([a-z0-9]([a-z0-9]*-[a-z0-9]+)*\.)+";
+	let pattern = "^([a-z0-9]([a-z0-9]*-[a-z0-9]+)*\\.)+";
 	pattern += "(" + domains.join("|") + ")$";
+	console.log(pattern);
 	let input = prompt("Введіть рядок:");
 	alert("Введено " + 
 		(new RegExp(pattern).test(input) ?

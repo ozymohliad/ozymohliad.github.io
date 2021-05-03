@@ -99,3 +99,16 @@ button:hover {
 	width: 50vw;
 }
 
+#radios {
+	display: inline-block;
+	text-align: left;
+}
+
+.radioel {
+	margin: 5px;
+	font-size: 150%;
+}
+
+#div81, #div82 {
+	display: none;
+}

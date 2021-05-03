@@ -23,8 +23,8 @@ function task9() {
 	
 	let x1 = (-b + d**0.5) / (2*a);
 	let x2 = (-b - d**0.5) / (2*a);
-	document.getElementById("p5.9_1").innerHTML =  `<i>x<sub>1</sub></i> = ${x1}`;
-	document.getElementById("p5.9_2").innerHTML =  `<i>x<sub>2</sub></i> = ${x2}`;
+	document.getElementById("p5.9_1").innerHTML = `x1 = ${x1}`;
+	document.getElementById("p5.9_2").innerHTML = `x2 = ${x2}`;
 }
 
 function task17() {

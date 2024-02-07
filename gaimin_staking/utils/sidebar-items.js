@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["assert_derived_from","assert_initialized","assert_signer","assert_uninitialized","create_account_ix","delete_account","is_initialized","parse_string"]};

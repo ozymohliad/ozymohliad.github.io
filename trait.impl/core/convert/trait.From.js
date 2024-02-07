@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"gaimin_staking":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.75.0/core/convert/trait.From.html\" title=\"trait core::convert::From\">From</a>&lt;<a class=\"enum\" href=\"gaimin_staking/error/enum.GaiminError.html\" title=\"enum gaimin_staking::error::GaiminError\">GaiminError</a>&gt; for ProgramError"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

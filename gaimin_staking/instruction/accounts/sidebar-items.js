@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["ClaimAccounts","ConfigAccounts","Context","DeleteAccounts","NftAccounts","ReceiverAccounts"]};

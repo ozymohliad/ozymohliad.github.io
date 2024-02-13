@@ -70,7 +70,6 @@
 <a href="#70" id="70">70</a>
 <a href="#71" id="71">71</a>
 <a href="#72" id="72">72</a>
-<a href="#73" id="73">73</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>solana_program::program_error::ProgramError;
 
 <span class="doccomment">/// Custom errors of the GMRX Claim Program
@@ -124,8 +123,7 @@
 
     <span class="doccomment">/// Error code: `0x8`
     ///
-    /// Attempted to parse a byte array as a string, but either the array was too short, or it
-    /// didn&#39;t contain a valid UTF-8
+    /// Attempted to parse a byte array as a string, but it didn&#39;t contain valid UTF-8
     </span>InvalidString,
 
     <span class="doccomment">/// Error code: `0x9`

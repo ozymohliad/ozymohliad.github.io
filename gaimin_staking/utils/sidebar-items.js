@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["assert_derived_from","assert_initialized","assert_signer","assert_uninitialized","create_account_ix","delete_account","is_initialized","parse_string"]};
+window.SIDEBAR_ITEMS = {"fn":["assert_derived_from","assert_derived_from_with_bump","assert_initialized","assert_ix_data_length","assert_signer","assert_uninitialized","create_account_ix","delete_account","is_initialized","parse_string"]};

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["GaiminInstruction"],"mod":["accounts"],"struct":["ConfigArgs","ReceiverArgs"]};
+window.SIDEBAR_ITEMS = {"enum":["GaiminInstruction"],"mod":["accounts"],"struct":["ClaimArgs","ConfigArgs","ReceiverArgs"]};

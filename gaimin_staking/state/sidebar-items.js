@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["BNB_CHAIN_WALLET_ADDRESS_LENGTH"],"struct":["ClaimRecord","Config","NftRecord","ReceiverRecord"]};
+window.SIDEBAR_ITEMS = {"constant":["BNB_CHAIN_WALLET_ADDRESS_LENGTH"],"struct":["ClaimRecord","Config","NftRecord"]};

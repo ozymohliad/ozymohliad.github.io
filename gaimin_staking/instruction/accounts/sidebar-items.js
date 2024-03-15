@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["BumpNonceAccounts","ClaimAccounts","ConfigAccounts","Context","DeleteAccounts","NftAccounts","ReceiverAccounts"]};
+window.SIDEBAR_ITEMS = {"struct":["ClaimAccounts","ConfigAccounts","Context","CreateClaimAccounts","DeleteAccounts","NftAccounts"]};

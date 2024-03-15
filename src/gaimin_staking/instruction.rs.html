@@ -253,15 +253,9 @@
 <a href="#253" id="253">253</a>
 <a href="#254" id="254">254</a>
 <a href="#255" id="255">255</a>
-<a href="#256" id="256">256</a>
-<a href="#257" id="257">257</a>
-<a href="#258" id="258">258</a>
-<a href="#259" id="259">259</a>
-<a href="#260" id="260">260</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>arrayref::{array_mut_ref, array_ref, array_refs, mut_array_refs};
 <span class="kw">use </span>shank::ShankContext;
 <span class="kw">use </span>solana_program::{
-    clock::UnixTimestamp,
     msg,
     program_error::ProgramError,
     program_pack::{IsInitialized, Pack, Sealed},
@@ -285,8 +279,9 @@
     /// system instructions. To update the config account, it must first be deleted and then
     /// created again.
     </span><span class="attr">#[account(<span class="number">0</span>, signer, name = <span class="string">&quot;authority&quot;</span>, desc = <span class="string">&quot;Config authority/Rent payer&quot;</span>)]
-    #[account(<span class="number">1</span>, writable, name = <span class="string">&quot;config&quot;</span>, desc = <span class="string">&quot;Config PDA&quot;</span>)]
-    #[account(<span class="number">2</span>, name = <span class="string">&quot;system_program&quot;</span>, desc = <span class="string">&quot;System program&quot;</span>)]
+    #[account(<span class="number">1</span>, name = <span class="string">&quot;creator&quot;</span>, desc = <span class="string">&quot;Creator of claimable NFTs&quot;</span>)]
+    #[account(<span class="number">2</span>, writable, name = <span class="string">&quot;config&quot;</span>, desc = <span class="string">&quot;Config PDA&quot;</span>)]
+    #[account(<span class="number">3</span>, name = <span class="string">&quot;system_program&quot;</span>, desc = <span class="string">&quot;System program&quot;</span>)]
     </span>Config(ConfigArgs),
 
     <span class="doccomment">/// Instruction code: `0x1`
@@ -301,12 +296,11 @@
 
     <span class="doccomment">/// Instruction code: `0x2`
     ///
-    /// Create and initialize an NFT record account. It is a system instruction that must be signed
-    /// by the config authority. The config account must be initialized first. The NFT record
-    /// account may NOT be initialized. To update an existing NFT record, delete it and create
-    /// again. The NFT being registered must be valid and of the programmable standard. The config
-    /// authority will pay for rent exemption.
-    </span><span class="attr">#[account(<span class="number">0</span>, signer, name = <span class="string">&quot;authority&quot;</span>, desc = <span class="string">&quot;Config authority/Rent payer&quot;</span>)]
+    /// Create and initialize an NFT record account. The config account must be initialized first.
+    /// The NFT record account may NOT be initialized. To update an existing NFT record, delete it
+    /// and create again. The NFT being registered must be valid and of the programmable standard.
+    /// The config authority will pay for rent exemption.
+    </span><span class="attr">#[account(<span class="number">0</span>, signer, name = <span class="string">&quot;payer&quot;</span>, desc = <span class="string">&quot;Rent payer&quot;</span>)]
     #[account(<span class="number">1</span>, name = <span class="string">&quot;mint&quot;</span>, desc = <span class="string">&quot;NFT mint account&quot;</span>)]
     #[account(<span class="number">2</span>, name = <span class="string">&quot;metadata&quot;</span>, desc = <span class="string">&quot;NFT metadata account&quot;</span>)]
     #[account(<span class="number">3</span>, name = <span class="string">&quot;edition&quot;</span>, desc = <span class="string">&quot;NFT edition account&quot;</span>)]
@@ -317,39 +311,26 @@
 
     <span class="doccomment">/// Instruction code: `0x3`
     ///
-    /// Create or update the user&#39;s receiver record account. It is a user instruction and must be
-    /// signed with the user&#39;s wallet account key. The user will pay for rent exemption.
-    </span><span class="attr">#[account(<span class="number">0</span>, signer, name = <span class="string">&quot;user&quot;</span>, desc = <span class="string">&quot;User wallet account/Rent payer&quot;</span>)]
-    #[account(<span class="number">1</span>, writable, name = <span class="string">&quot;receiver&quot;</span>, desc = <span class="string">&quot;Receiver record PDA&quot;</span>)]
-    #[account(<span class="number">2</span>, name = <span class="string">&quot;system_program&quot;</span>, desc = <span class="string">&quot;System program&quot;</span>)]
-    </span>Receiver(ReceiverArgs),
+    /// Create an initial claim record. Claim record account must not be initialized. The user will
+    /// pay for rent exemption.
+    </span><span class="attr">#[account(<span class="number">0</span>, signer, name = <span class="string">&quot;wallet&quot;</span>, desc = <span class="string">&quot;User wallet account/Rent payer&quot;</span>)]
+    #[account(<span class="number">1</span>, writable, name = <span class="string">&quot;claim&quot;</span>, desc = <span class="string">&quot;Claim record PDA&quot;</span>)]
+    #[account(<span class="number">2</span>, name = <span class="string">&quot;config&quot;</span>, desc = <span class="string">&quot;Config PDA&quot;</span>)]
+    #[account(<span class="number">3</span>, name = <span class="string">&quot;system_program&quot;</span>, desc = <span class="string">&quot;System program&quot;</span>)]
+    </span>CreateClaim(CreateClaimArgs),
 
     <span class="doccomment">/// Instruction code: `0x4`
     ///
-    /// Create and initialize a claim record for the given user and NFT. It is a user instruction
-    /// and must be signed with the user&#39;s wallet account key. The user must own the NFT and the
-    /// token account must be locked. The claim record account may or may not be initialized. If
-    /// the claim record is initialized, the reward for the current claim will be added to the
-    /// reward amount of the claim record. The config account, the NFT record account, and the
-    /// receiver record account must be initialized. The user will pay for rent exemption.
+    /// Add a reward for the given NFT to a provided claim record. It is a user instruction and
+    /// must be signed with the user&#39;s wallet account key. The user must own the NFT and the token
+    /// account must be locked. All accounts must be initialized.
     </span><span class="attr">#[account(<span class="number">0</span>, signer, name = <span class="string">&quot;wallet&quot;</span>, desc = <span class="string">&quot;User wallet account/Rent payer&quot;</span>)]
     #[account(<span class="number">1</span>, name = <span class="string">&quot;token&quot;</span>, desc = <span class="string">&quot;Token account&quot;</span>)]
     #[account(<span class="number">2</span>, name = <span class="string">&quot;token_record&quot;</span>, desc = <span class="string">&quot;Token record account&quot;</span>)]
     #[account(<span class="number">3</span>, writable, name = <span class="string">&quot;nft_record&quot;</span>, desc = <span class="string">&quot;NFT record PDA&quot;</span>)]
     #[account(<span class="number">4</span>, writable, name = <span class="string">&quot;claim&quot;</span>, desc = <span class="string">&quot;Claim record PDA&quot;</span>)]
-    #[account(<span class="number">5</span>, name = <span class="string">&quot;receiver&quot;</span>, desc = <span class="string">&quot;Receiver record PDA&quot;</span>)]
-    #[account(<span class="number">6</span>, name = <span class="string">&quot;config&quot;</span>, desc = <span class="string">&quot;Config PDA&quot;</span>)]
-    #[account(<span class="number">7</span>, name = <span class="string">&quot;system_program&quot;</span>, desc = <span class="string">&quot;System program&quot;</span>)]
+    #[account(<span class="number">5</span>, name = <span class="string">&quot;config&quot;</span>, desc = <span class="string">&quot;Config PDA&quot;</span>)]
     </span>Claim(ClaimArgs),
-
-    <span class="doccomment">/// Instruction code: `0x5`
-    ///
-    /// Increment [`crate::state::ReceiverRecord::nonce`] to finalize the latest claim record. This
-    /// instruction should be executed after a chain of claim instructions in a single transaction.
-    </span><span class="attr">#[account(<span class="number">0</span>, signer, name = <span class="string">&quot;wallet&quot;</span>, desc = <span class="string">&quot;User wallet account&quot;</span>)]
-    #[account(<span class="number">1</span>, name = <span class="string">&quot;claim&quot;</span>, desc = <span class="string">&quot;Most recent claim record PDA&quot;</span>)]
-    #[account(<span class="number">2</span>, writable, name = <span class="string">&quot;receiver&quot;</span>, desc = <span class="string">&quot;Receiver record PDA&quot;</span>)]
-    </span>BumpNonce,
 }
 
 <span class="kw">impl </span>GaiminInstruction {
@@ -362,9 +343,8 @@
             <span class="number">0 </span>=&gt; <span class="self">Self</span>::Config(ConfigArgs::unpack_from_slice(rest)<span class="question-mark">?</span>),
             <span class="number">1 </span>=&gt; <span class="self">Self</span>::Delete,
             <span class="number">2 </span>=&gt; <span class="self">Self</span>::Nft,
-            <span class="number">3 </span>=&gt; <span class="self">Self</span>::Receiver(ReceiverArgs::unpack_from_slice(rest)<span class="question-mark">?</span>),
+            <span class="number">3 </span>=&gt; <span class="self">Self</span>::CreateClaim(CreateClaimArgs::unpack_from_slice(rest)<span class="question-mark">?</span>),
             <span class="number">4 </span>=&gt; <span class="self">Self</span>::Claim(ClaimArgs::unpack_from_slice(rest)<span class="question-mark">?</span>),
-            <span class="number">5 </span>=&gt; <span class="self">Self</span>::BumpNonce,
             i =&gt; {
                 <span class="macro">msg!</span>(<span class="string">&quot;[Error] Invalid instruction code: {}&quot;</span>, i);
                 <span class="kw">return </span><span class="prelude-val">Err</span>(GaiminError::InvalidInstruction.into());
@@ -381,8 +361,8 @@
             }
             <span class="self">Self</span>::Delete =&gt; <span class="macro">vec!</span>[<span class="number">1</span>],
             <span class="self">Self</span>::Nft =&gt; <span class="macro">vec!</span>[<span class="number">2</span>],
-            <span class="self">Self</span>::Receiver(args) =&gt; {
-                <span class="kw">let </span><span class="kw-2">mut </span>res = <span class="macro">vec!</span>[<span class="number">3</span>; ReceiverArgs::LEN + <span class="number">1</span>];
+            <span class="self">Self</span>::CreateClaim(args) =&gt; {
+                <span class="kw">let </span><span class="kw-2">mut </span>res = <span class="macro">vec!</span>[<span class="number">3</span>; CreateClaimArgs::LEN + <span class="number">1</span>];
                 args.pack_into_slice(<span class="kw-2">&amp;mut </span>res[<span class="number">1</span>..]);
                 res
             }
@@ -391,17 +371,17 @@
                 args.pack_into_slice(<span class="kw-2">&amp;mut </span>res[<span class="number">1</span>..]);
                 res
             }
-            <span class="self">Self</span>::BumpNonce =&gt; <span class="macro">vec!</span>[<span class="number">5</span>],
         }
     }
 }
 
 <span class="attr">#[derive(Debug)]
 </span><span class="kw">pub struct </span>ConfigArgs {
-    <span class="kw">pub </span>claimable_from: UnixTimestamp,
-    <span class="kw">pub </span>total_reward: f64,
-    <span class="kw">pub </span>initial_reward_frac: f32,
-    <span class="kw">pub </span>reward_period_sec: i32,
+    <span class="kw">pub </span>claimable_from: i32,
+    <span class="kw">pub </span>accumulated_reward: i32,
+    <span class="kw">pub </span>initial_reward: i32,
+    <span class="kw">pub </span>total_accumulation_period: i32,
+    <span class="kw">pub </span>generation_duration: i32,
 }
 
 <span class="kw">impl </span>Sealed <span class="kw">for </span>ConfigArgs {}
@@ -412,81 +392,94 @@
 }
 
 <span class="kw">impl </span>Pack <span class="kw">for </span>ConfigArgs {
-    <span class="kw">const </span>LEN: usize = mem::size_of::&lt;UnixTimestamp&gt;()
-        + mem::size_of::&lt;f64&gt;()
-        + mem::size_of::&lt;f32&gt;()
-        + mem::size_of::&lt;i32&gt;();
+    <span class="kw">const </span>LEN: usize = <span class="number">5 </span>* <span class="number">4</span>;
 
     <span class="kw">fn </span>unpack_from_slice(input: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, ProgramError&gt; {
         assert_ix_data_length(input, ConfigArgs::LEN)<span class="question-mark">?</span>;
         <span class="kw">let </span>src = <span class="macro">array_ref!</span>[input, <span class="number">0</span>, ConfigArgs::LEN];
-        <span class="kw">let </span>(claimable_from, total_reward, initial_reward_frac, reward_period_sec) = <span class="macro">array_refs!</span>[
+        <span class="kw">let </span>(claimable_from, total_reward, initial_reward, reward_period_sec, generation_duration) = <span class="macro">array_refs!</span>[
             src,
-            mem::size_of::&lt;UnixTimestamp&gt;(),
-            mem::size_of::&lt;f64&gt;(),
-            mem::size_of::&lt;f32&gt;(),
+            mem::size_of::&lt;i32&gt;(),
+            mem::size_of::&lt;i32&gt;(),
+            mem::size_of::&lt;i32&gt;(),
+            mem::size_of::&lt;i32&gt;(),
             mem::size_of::&lt;i32&gt;()
         ];
 
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-            claimable_from: i64::from_le_bytes(<span class="kw-2">*</span>claimable_from),
-            total_reward: f64::from_le_bytes(<span class="kw-2">*</span>total_reward),
-            initial_reward_frac: f32::from_le_bytes(<span class="kw-2">*</span>initial_reward_frac),
-            reward_period_sec: i32::from_le_bytes(<span class="kw-2">*</span>reward_period_sec),
+            claimable_from: i32::from_le_bytes(<span class="kw-2">*</span>claimable_from),
+            accumulated_reward: i32::from_le_bytes(<span class="kw-2">*</span>total_reward),
+            initial_reward: i32::from_le_bytes(<span class="kw-2">*</span>initial_reward),
+            total_accumulation_period: i32::from_le_bytes(<span class="kw-2">*</span>reward_period_sec),
+            generation_duration: i32::from_le_bytes(<span class="kw-2">*</span>generation_duration),
         })
     }
 
     <span class="kw">fn </span>pack_into_slice(<span class="kw-2">&amp;</span><span class="self">self</span>, dst: <span class="kw-2">&amp;mut </span>[u8]) {
         <span class="kw">let </span>dst = <span class="macro">array_mut_ref!</span>[dst, <span class="number">0</span>, ConfigArgs::LEN];
-        <span class="kw">let </span>(claimable_from, total_reward, initial_reward_frac, reward_period_sec) = <span class="macro">mut_array_refs!</span>[
+        <span class="kw">let </span>(claimable_from, total_reward, initial_reward, reward_period_sec, generation_duration) = <span class="macro">mut_array_refs!</span>[
             dst,
-            mem::size_of::&lt;UnixTimestamp&gt;(),
-            mem::size_of::&lt;f64&gt;(),
-            mem::size_of::&lt;f32&gt;(),
+            mem::size_of::&lt;i32&gt;(),
+            mem::size_of::&lt;i32&gt;(),
+            mem::size_of::&lt;i32&gt;(),
+            mem::size_of::&lt;i32&gt;(),
             mem::size_of::&lt;i32&gt;()
         ];
 
         <span class="kw-2">*</span>claimable_from = <span class="self">self</span>.claimable_from.to_le_bytes();
-        <span class="kw-2">*</span>total_reward = <span class="self">self</span>.total_reward.to_le_bytes();
-        <span class="kw-2">*</span>initial_reward_frac = <span class="self">self</span>.initial_reward_frac.to_le_bytes();
-        <span class="kw-2">*</span>reward_period_sec = <span class="self">self</span>.reward_period_sec.to_le_bytes();
+        <span class="kw-2">*</span>total_reward = <span class="self">self</span>.accumulated_reward.to_le_bytes();
+        <span class="kw-2">*</span>initial_reward = <span class="self">self</span>.initial_reward.to_le_bytes();
+        <span class="kw-2">*</span>reward_period_sec = <span class="self">self</span>.total_accumulation_period.to_le_bytes();
+        <span class="kw-2">*</span>generation_duration = <span class="self">self</span>.generation_duration.to_le_bytes();
     }
 }
 
+<span class="kw">const </span>CLAIM_SEED_LENGTH: usize = <span class="number">32</span>;
+
 <span class="attr">#[derive(Debug)]
-</span><span class="kw">pub struct </span>ReceiverArgs {
+</span><span class="kw">pub struct </span>CreateClaimArgs {
+    <span class="kw">pub </span>bump: u8,
+    <span class="kw">pub </span>seed: [u8; CLAIM_SEED_LENGTH],
     <span class="kw">pub </span>bnb_chain_wallet_address: String,
 }
 
-<span class="kw">impl </span>Sealed <span class="kw">for </span>ReceiverArgs {}
-<span class="kw">impl </span>IsInitialized <span class="kw">for </span>ReceiverArgs {
+<span class="kw">impl </span>Sealed <span class="kw">for </span>CreateClaimArgs {}
+<span class="kw">impl </span>IsInitialized <span class="kw">for </span>CreateClaimArgs {
     <span class="kw">fn </span>is_initialized(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
         <span class="bool-val">true
     </span>}
 }
 
-<span class="kw">impl </span>Pack <span class="kw">for </span>ReceiverArgs {
-    <span class="kw">const </span>LEN: usize = BNB_CHAIN_WALLET_ADDRESS_LENGTH;
+<span class="kw">impl </span>Pack <span class="kw">for </span>CreateClaimArgs {
+    <span class="kw">const </span>LEN: usize = <span class="number">1 </span>+ CLAIM_SEED_LENGTH + BNB_CHAIN_WALLET_ADDRESS_LENGTH;
 
     <span class="kw">fn </span>unpack_from_slice(input: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, ProgramError&gt; {
-        assert_ix_data_length(input, ReceiverArgs::LEN)<span class="question-mark">?</span>;
-        parse_string(input).map(|bnb_chain_wallet_address| <span class="self">Self </span>{
-            bnb_chain_wallet_address,
+        assert_ix_data_length(input, CreateClaimArgs::LEN)<span class="question-mark">?</span>;
+        <span class="kw">let </span>src = <span class="macro">array_ref!</span>[input, <span class="number">0</span>, CreateClaimArgs::LEN];
+        <span class="kw">let </span>(bump, seed, bnb_chain_wallet_address) =
+            <span class="macro">array_refs!</span>[src, <span class="number">1</span>, CLAIM_SEED_LENGTH, BNB_CHAIN_WALLET_ADDRESS_LENGTH];
+        <span class="prelude-val">Ok</span>(CreateClaimArgs {
+            bump: u8::from_le_bytes(<span class="kw-2">*</span>bump),
+            seed: <span class="kw-2">*</span>seed,
+            bnb_chain_wallet_address: parse_string(bnb_chain_wallet_address)<span class="question-mark">?</span>,
         })
     }
 
     <span class="kw">fn </span>pack_into_slice(<span class="kw-2">&amp;</span><span class="self">self</span>, dst: <span class="kw-2">&amp;mut </span>[u8]) {
-        dst.copy_from_slice(<span class="kw-2">&amp;</span><span class="self">self</span>.bnb_chain_wallet_address.as_bytes());
+        <span class="kw">let </span>dst = <span class="macro">array_mut_ref!</span>[dst, <span class="number">0</span>, CreateClaimArgs::LEN];
+        <span class="kw">let </span>(bump, seed, bnb_chain_wallet_address) =
+            <span class="macro">mut_array_refs!</span>[dst, <span class="number">1</span>, CLAIM_SEED_LENGTH, BNB_CHAIN_WALLET_ADDRESS_LENGTH];
+        <span class="kw-2">*</span>bump = <span class="self">self</span>.bump.to_le_bytes();
+        <span class="kw-2">*</span>seed = <span class="self">self</span>.seed;
+        bnb_chain_wallet_address.copy_from_slice(<span class="self">self</span>.bnb_chain_wallet_address.as_bytes());
     }
 }
 
 <span class="attr">#[derive(Debug)]
 </span><span class="kw">pub struct </span>ClaimArgs {
-    <span class="kw">pub </span>receiver_bump: u8,
     <span class="kw">pub </span>token_acc_bump: u8,
     <span class="kw">pub </span>token_record_bump: u8,
     <span class="kw">pub </span>nft_record_bump: u8,
-    <span class="kw">pub </span>claim_record_bump: u8,
 }
 
 <span class="kw">impl </span>Sealed <span class="kw">for </span>ClaimArgs {}
@@ -497,25 +490,22 @@
 }
 
 <span class="kw">impl </span>Pack <span class="kw">for </span>ClaimArgs {
-    <span class="kw">const </span>LEN: usize = <span class="number">5</span>;
+    <span class="kw">const </span>LEN: usize = <span class="number">3</span>;
 
     <span class="kw">fn </span>unpack_from_slice(input: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, ProgramError&gt; {
         assert_ix_data_length(input, ClaimArgs::LEN)<span class="question-mark">?</span>;
+
         <span class="prelude-val">Ok</span>(ClaimArgs {
-            receiver_bump: input[<span class="number">0</span>],
-            token_acc_bump: input[<span class="number">1</span>],
-            token_record_bump: input[<span class="number">2</span>],
-            nft_record_bump: input[<span class="number">3</span>],
-            claim_record_bump: input[<span class="number">4</span>],
+            token_acc_bump: input[<span class="number">0</span>],
+            token_record_bump: input[<span class="number">1</span>],
+            nft_record_bump: input[<span class="number">2</span>],
         })
     }
 
     <span class="kw">fn </span>pack_into_slice(<span class="kw-2">&amp;</span><span class="self">self</span>, dst: <span class="kw-2">&amp;mut </span>[u8]) {
-        dst[<span class="number">0</span>] = <span class="self">self</span>.receiver_bump;
-        dst[<span class="number">1</span>] = <span class="self">self</span>.token_acc_bump;
-        dst[<span class="number">2</span>] = <span class="self">self</span>.token_record_bump;
-        dst[<span class="number">3</span>] = <span class="self">self</span>.nft_record_bump;
-        dst[<span class="number">4</span>] = <span class="self">self</span>.claim_record_bump;
+        dst[<span class="number">0</span>] = <span class="self">self</span>.token_acc_bump;
+        dst[<span class="number">1</span>] = <span class="self">self</span>.token_record_bump;
+        dst[<span class="number">2</span>] = <span class="self">self</span>.nft_record_bump;
     }
 }
 </code></pre></div></section></main></body></html>
